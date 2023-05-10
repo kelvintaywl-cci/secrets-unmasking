@@ -1,0 +1,42 @@
+# NOTE: in this project, we have a project env var APP_URL
+
+version: 2.1
+
+parameters:
+  secret:
+    type: string
+    default: "APP_URL"
+
+executors:
+  base:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+
+commands:
+  print_secret:
+    steps:
+      # expectation: masked
+      - run: printenv << pipeline.parameters.secret >>
+
+
+jobs:
+  base64:
+    executor: base
+    steps:
+      - print_secret
+      - run: echo $(printenv << pipeline.parameters.secret >> | base64)
+
+  artifacts:
+    executor: base
+    steps:
+      - print_secret
+      - run: printenv << pipeline.parameters.secret >> > value.txt
+      - store_artifacts:
+          path: value.txt
+
+workflows:
+  techniques:
+    jobs:
+      - base64
+      - artifacts
